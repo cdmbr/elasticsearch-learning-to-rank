@@ -42,13 +42,13 @@ public class LTRStatsAction extends ActionType<LTRStatsAction.LTRStatsNodesRespo
     public static class LTRStatsNodeRequest extends TransportRequest {
         private final LTRStatsNodesRequest nodesRequest;
 
-        public LTRStatsNodeRequest(LTRStatsNodesRequest nodesRequest) {
-            this.nodesRequest = nodesRequest;
-        }
-
         public LTRStatsNodeRequest(StreamInput in) throws IOException {
             super(in);
-            nodesRequest = new LTRStatsNodesRequest(in);
+            this.nodesRequest = new LTRStatsNodesRequest(in);
+        }
+
+        public LTRStatsNodeRequest(LTRStatsNodesRequest nodesRequest) {
+            this.nodesRequest = nodesRequest;
         }
 
         public LTRStatsNodesRequest getLTRStatsNodesRequest() {
@@ -102,7 +102,7 @@ public class LTRStatsAction extends ActionType<LTRStatsAction.LTRStatsNodesRespo
         private Set<String> statsToBeRetrieved;
 
         public LTRStatsNodesRequest(StreamInput in) throws IOException {
-            super(in);
+            super((String[])null);
             statsToBeRetrieved = in.readCollectionAsSet(StreamInput::readString);
         }
 
@@ -117,12 +117,6 @@ public class LTRStatsAction extends ActionType<LTRStatsAction.LTRStatsNodesRespo
 
         public Set<String> getStatsToBeRetrieved() {
             return statsToBeRetrieved;
-        }
-
-        @Override
-        public void writeTo(StreamOutput out) throws IOException {
-            super.writeTo(out);
-            out.writeStringCollection(statsToBeRetrieved);
         }
     }
 
