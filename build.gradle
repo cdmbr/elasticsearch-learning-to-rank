@@ -16,7 +16,6 @@ allprojects {
 
   repositories {
     mavenCentral()
-    jcenter()
     mavenLocal()
     gradlePluginPortal()
   }
@@ -71,12 +70,6 @@ esplugin {
 repositories {
   mavenCentral()
   mavenLocal()
-  jcenter {
-    url "https://jcenter.bintray.com/"
-    metadataSources{
-      artifact()
-    }
-  }
 }
 
 java {
