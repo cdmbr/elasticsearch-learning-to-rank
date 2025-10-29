@@ -18,6 +18,11 @@ package com.o19s.es.ltr.action;
 
 import com.o19s.es.ltr.action.ListStoresAction.ListStoresActionResponse;
 import com.o19s.es.ltr.feature.store.index.IndexFeatureStore;
+import java.io.IOException;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
 import org.elasticsearch.action.ActionRequestBuilder;
 import org.elasticsearch.action.ActionRequestValidationException;
 import org.elasticsearch.action.ActionResponse;
@@ -32,124 +37,118 @@ import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.ToXContentObject;
 import org.elasticsearch.xcontent.XContentBuilder;
 
-import java.io.IOException;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.stream.Collectors;
-
 public class ListStoresAction extends ActionType<ListStoresActionResponse> {
-    public static final String NAME = "cluster:admin/ltr/featurestore/list";
-    public static final ListStoresAction INSTANCE = new ListStoresAction();
+  public static final String NAME = "cluster:admin/ltr/featurestore/list";
+  public static final ListStoresAction INSTANCE = new ListStoresAction();
 
-    private ListStoresAction() {
-        super(NAME);
+  private ListStoresAction() {
+    super(NAME);
+  }
+
+  public static class ListStoresActionRequest
+      extends MasterNodeReadRequest<ListStoresActionRequest> {
+    @Override
+    public ActionRequestValidationException validate() {
+      return null;
     }
 
-    public static class ListStoresActionRequest extends MasterNodeReadRequest<ListStoresActionRequest> {
-        @Override
-        public ActionRequestValidationException validate() {
-            return null;
-        }
-
-        public ListStoresActionRequest() {
-            super(TimeValue.MAX_VALUE);
-        }
-
-        public ListStoresActionRequest(StreamInput in) throws IOException {
-            super(in);
-        }
+    public ListStoresActionRequest() {
+      super(TimeValue.MAX_VALUE);
     }
 
-    public static class ListStoresActionResponse extends ActionResponse implements ToXContentObject {
-        private Map<String, IndexStoreInfo> stores;
+    public ListStoresActionRequest(StreamInput in) throws IOException {
+      super(in);
+    }
+  }
 
-        ListStoresActionResponse() {}
+  public static class ListStoresActionResponse extends ActionResponse implements ToXContentObject {
+    private Map<String, IndexStoreInfo> stores;
 
-        ListStoresActionResponse(StreamInput in) throws IOException {
-            super(in);
-            stores = in.readMap(StreamInput::readString, IndexStoreInfo::new);
-        }
+    ListStoresActionResponse() {}
 
-        public ListStoresActionResponse(List<IndexStoreInfo> info) {
-            stores = info.stream().collect(Collectors.toMap((i) -> i.storeName, (i) -> i));
-        }
-
-        @Override
-        public XContentBuilder toXContent(XContentBuilder builder, Params params) throws IOException {
-            return builder.startObject()
-                    .field("stores", stores)
-                    .endObject();
-        }
-
-        @Override
-        public void writeTo(StreamOutput out) throws IOException {
-            out.writeMap(stores, StreamOutput::writeString, (w, i) -> i.writeTo(w));
-        }
-
-        public Map<String, IndexStoreInfo> getStores() {
-            return stores;
-        }
+    ListStoresActionResponse(StreamInput in) throws IOException {
+      stores = in.readMap(StreamInput::readString, IndexStoreInfo::new);
     }
 
-    public static class IndexStoreInfo implements Writeable, ToXContent {
-        private String storeName;
-        private String indexName;
-        private int version;
-        private Map<String, Integer> counts;
-
-        public IndexStoreInfo(String indexName, int version, Map<String, Integer> counts) {
-            this.indexName = Objects.requireNonNull(indexName);
-            this.storeName = IndexFeatureStore.storeName(indexName);
-            this.version = version;
-            this.counts = counts;
-        }
-        public IndexStoreInfo(StreamInput in) throws IOException {
-            storeName = in.readString();
-            indexName = in.readString();
-            version = in.readVInt();
-            counts = in.readMap(StreamInput::readString, StreamInput::readVInt);
-        }
-
-        @Override
-        public void writeTo(StreamOutput out) throws IOException {
-            out.writeString(storeName);
-            out.writeString(indexName);
-            out.writeVInt(version);
-            out.writeMap(counts, StreamOutput::writeString, StreamOutput::writeVInt);
-        }
-
-        @Override
-        public XContentBuilder toXContent(XContentBuilder builder, Params params) throws IOException {
-            return builder.startObject()
-                .field("store", storeName)
-                .field("index", indexName)
-                .field("version", version)
-                .field("counts", counts)
-                .endObject();
-        }
-
-        public String getStoreName() {
-            return storeName;
-        }
-
-        public String getIndexName() {
-            return indexName;
-        }
-
-        public int getVersion() {
-            return version;
-        }
-
-        public Map<String, Integer> getCounts() {
-            return counts;
-        }
+    public ListStoresActionResponse(List<IndexStoreInfo> info) {
+      stores = info.stream().collect(Collectors.toMap((i) -> i.storeName, (i) -> i));
     }
 
-    public static class ListStoresActionBuilder extends
-        ActionRequestBuilder<ListStoresActionRequest, ListStoresActionResponse> {
-        public ListStoresActionBuilder(ElasticsearchClient client){
-            super(client, INSTANCE, new ListStoresActionRequest());
-        }
+    @Override
+    public XContentBuilder toXContent(XContentBuilder builder, Params params) throws IOException {
+      return builder.startObject().field("stores", stores).endObject();
     }
+
+    @Override
+    public void writeTo(StreamOutput out) throws IOException {
+      out.writeMap(stores, StreamOutput::writeString, (w, i) -> i.writeTo(w));
+    }
+
+    public Map<String, IndexStoreInfo> getStores() {
+      return stores;
+    }
+  }
+
+  public static class IndexStoreInfo implements Writeable, ToXContent {
+    private String storeName;
+    private String indexName;
+    private int version;
+    private Map<String, Integer> counts;
+
+    public IndexStoreInfo(String indexName, int version, Map<String, Integer> counts) {
+      this.indexName = Objects.requireNonNull(indexName);
+      this.storeName = IndexFeatureStore.storeName(indexName);
+      this.version = version;
+      this.counts = counts;
+    }
+
+    public IndexStoreInfo(StreamInput in) throws IOException {
+      storeName = in.readString();
+      indexName = in.readString();
+      version = in.readVInt();
+      counts = in.readMap(StreamInput::readString, StreamInput::readVInt);
+    }
+
+    @Override
+    public void writeTo(StreamOutput out) throws IOException {
+      out.writeString(storeName);
+      out.writeString(indexName);
+      out.writeVInt(version);
+      out.writeMap(counts, StreamOutput::writeString, StreamOutput::writeVInt);
+    }
+
+    @Override
+    public XContentBuilder toXContent(XContentBuilder builder, Params params) throws IOException {
+      return builder
+          .startObject()
+          .field("store", storeName)
+          .field("index", indexName)
+          .field("version", version)
+          .field("counts", counts)
+          .endObject();
+    }
+
+    public String getStoreName() {
+      return storeName;
+    }
+
+    public String getIndexName() {
+      return indexName;
+    }
+
+    public int getVersion() {
+      return version;
+    }
+
+    public Map<String, Integer> getCounts() {
+      return counts;
+    }
+  }
+
+  public static class ListStoresActionBuilder
+      extends ActionRequestBuilder<ListStoresActionRequest, ListStoresActionResponse> {
+    public ListStoresActionBuilder(ElasticsearchClient client) {
+      super(client, INSTANCE, new ListStoresActionRequest());
+    }
+  }
 }

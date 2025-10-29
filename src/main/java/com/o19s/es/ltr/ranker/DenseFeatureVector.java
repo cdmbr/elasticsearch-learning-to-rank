@@ -18,7 +18,7 @@ package com.o19s.es.ltr.ranker;
 
 public class DenseFeatureVector extends ArrayFeatureVector {
 
-    public DenseFeatureVector(int size) {
-        super(size, 0F);
-    }
+  public DenseFeatureVector(int size) {
+    super(size, 0F);
+  }
 }

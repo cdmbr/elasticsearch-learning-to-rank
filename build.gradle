@@ -1,89 +1,93 @@
 buildscript {
-  repositories {
-    gradlePluginPortal()
-  }
+	repositories {
+		gradlePluginPortal()
+	}
 
-  dependencies {
-    classpath "org.elasticsearch.gradle:build-tools:${elasticsearchVersion}"
-  }
+	dependencies {
+		classpath "org.elasticsearch.gradle:build-tools:${elasticsearchVersion}"
+		classpath 'com.diffplug.spotless:spotless-plugin-gradle:+'
+	}
 }
 
 allprojects {
-  group = 'com.o19s'
-  version = "${ltrVersion}-es${elasticsearchVersion}"
+	group = 'com.o19s'
+	version = "${ltrVersion}-es${elasticsearchVersion}"
 
-  apply plugin: 'java'
+	apply plugin: 'java'
 
-  repositories {
-    mavenCentral()
-    jcenter()
-    mavenLocal()
-    gradlePluginPortal()
-  }
+	repositories {
+		mavenCentral()
+		mavenLocal()
+		gradlePluginPortal()
+	}
 
-  dependencies {
-    implementation "org.apache.lucene:lucene-expressions:${luceneVersion}"
-    implementation "org.antlr:antlr4-runtime:${antlrVersion}"
-    implementation "org.ow2.asm:asm:${ow2Version}"
-    implementation "org.ow2.asm:asm-commons:${ow2Version}"
-    implementation "org.ow2.asm:asm-tree:${ow2Version}"
-    implementation 'com.o19s:RankyMcRankFace:0.1.1'
-    implementation "com.github.spullara.mustache.java:compiler:0.9.3"
+	dependencies {
+		implementation "org.apache.lucene:lucene-expressions:${luceneVersion}"
+		implementation "org.antlr:antlr4-runtime:${antlrVersion}"
+		implementation "org.ow2.asm:asm:${ow2Version}"
+		implementation "org.ow2.asm:asm-commons:${ow2Version}"
+		implementation "org.ow2.asm:asm-tree:${ow2Version}"
+		implementation 'com.o19s:RankyMcRankFace:0.1.1'
+		implementation "com.github.spullara.mustache.java:compiler:0.9.3"
 
-    runtimeOnly 'org.locationtech.spatial4j:spatial4j:0.7'
-    runtimeOnly 'org.locationtech.jts:jts-core:1.15.0'
-  }
+		runtimeOnly 'org.locationtech.spatial4j:spatial4j:0.7'
+		runtimeOnly 'org.locationtech.jts:jts-core:1.15.0'
+	}
 }
 
-apply plugin: 'checkstyle'
 apply plugin: 'idea'
+apply plugin: 'com.diffplug.spotless'
 apply plugin: 'elasticsearch.esplugin'
 apply plugin: 'elasticsearch.java-rest-test'
 apply plugin: 'elasticsearch.yaml-rest-test'
 
-checkstyle {
-  configFile = rootProject.file('config/checkstyle/checkstyle.xml')
+spotless {
+	java {
+		googleJavaFormat('1.31.0')
+		target 'src/**/*.java'
+	}
+	groovyGradle {
+		target '*.gradle'
+		greclipse()
+	}
 }
 
 sourceSets {
-  javaRestTest {
-    compileClasspath += sourceSets["main"].output + sourceSets["test"].output + configurations["testRuntimeClasspath"]
-    runtimeClasspath += output + compileClasspath
-  }
-  yamlRestTest {
-    compileClasspath += sourceSets["main"].output + sourceSets["test"].output + configurations["testRuntimeClasspath"]
-    runtimeClasspath += output + compileClasspath
-  }
+	javaRestTest {
+		compileClasspath += sourceSets["main"].output + sourceSets["test"].output + configurations["testRuntimeClasspath"]
+		runtimeClasspath += output + compileClasspath
+	}
+	yamlRestTest {
+		compileClasspath += sourceSets["main"].output + sourceSets["test"].output + configurations["testRuntimeClasspath"]
+		runtimeClasspath += output + compileClasspath
+	}
 }
 
 esplugin {
-  name 'ltr'
-  description 'Learning to Rank Query w/ RankLib Models'
-  classname 'com.o19s.es.ltr.LtrQueryParserPlugin'
-  // license of the plugin, may be different than the above license
-  licenseFile = rootProject.file('LICENSE.txt')
-  // copyright notices, may be different than the above notice
-  noticeFile = rootProject.file('NOTICE.txt')
+	name 'ltr'
+	description 'Learning to Rank Query w/ RankLib Models'
+	classname 'com.o19s.es.ltr.LtrQueryParserPlugin'
+	// license of the plugin, may be different than the above license
+	licenseFile = rootProject.file('LICENSE.txt')
+	// copyright notices, may be different than the above notice
+	noticeFile = rootProject.file('NOTICE.txt')
+}
+
+test {
+	jvmArgs += [
+		"-Des.nativelibs.path=/tmp",
+		"-Des.entitlement.enableForTests=false",
+	]
 }
 
 // In this section you declare the dependencies for your production and test code
 // Elasticsearch dependency is included due to the build-tools, test-framework as well
 repositories {
-  mavenCentral()
-  mavenLocal()
-  jcenter {
-    url "https://jcenter.bintray.com/"
-    metadataSources{
-      artifact()
-    }
-  }
+	mavenCentral()
+	mavenLocal()
 }
 
 java {
-  withJavadocJar()
-  withSourcesJar()
+	withJavadocJar()
+	withSourcesJar()
 }
-
-// Set to false to not use elasticsearch checkstyle rules
-checkstyleMain.enabled = true
-checkstyleTest.enabled = true

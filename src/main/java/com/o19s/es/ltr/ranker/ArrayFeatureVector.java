@@ -19,30 +19,30 @@ package com.o19s.es.ltr.ranker;
 import java.util.Arrays;
 
 public class ArrayFeatureVector implements LtrRanker.FeatureVector {
-    public final float[] scores;
-    public final float defaultScore;
+  public final float[] scores;
+  public final float defaultScore;
 
-    public ArrayFeatureVector(int size, float value) {
-        scores = new float[size];
-        defaultScore = value;
-    }
+  public ArrayFeatureVector(int size, float value) {
+    scores = new float[size];
+    defaultScore = value;
+  }
 
-    @Override
-    public void setFeatureScore(int featureIdx, float score) {
-        scores[featureIdx] = score;
-    }
+  @Override
+  public void setFeatureScore(int featureIdx, float score) {
+    scores[featureIdx] = score;
+  }
 
-    @Override
-    public float getFeatureScore(int featureIdx) {
-        return scores[featureIdx];
-    }
+  @Override
+  public float getFeatureScore(int featureIdx) {
+    return scores[featureIdx];
+  }
 
-    public void reset() {
-        Arrays.fill(scores, defaultScore);
-    }
+  public void reset() {
+    Arrays.fill(scores, defaultScore);
+  }
 
-    @Override
-    public float getDefaultScore() {
-        return defaultScore;
-    }
+  @Override
+  public float getDefaultScore() {
+    return defaultScore;
+  }
 }
