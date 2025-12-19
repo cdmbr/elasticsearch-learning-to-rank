@@ -45,6 +45,7 @@ spotless {
 	java {
 		googleJavaFormat('1.31.0')
 		target 'src/**/*.java'
+		removeUnusedImports()
 	}
 	groovyGradle {
 		target '*.gradle'
