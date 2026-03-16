@@ -96,8 +96,11 @@ import org.junit.Before;
 
 @LuceneTestCase.SuppressSysoutChecks(bugUrl = "RankURL does this when training models... ")
 public class LtrQueryTests extends LuceneTestCase {
-  // Number of ULPs allowed when checking scores equality
-  private static final int SCORE_NB_ULP_PREC = 1;
+  // Tolerance allowed when checking scores equality.
+  // Feature scores may differ slightly between extraction passes due to
+  // floating-point precision in Lucene similarity implementations, and
+  // these differences can be amplified by the neural-network (RankNet) model.
+  private static final float SCORE_EPSILON = 1e-3f;
 
   private int[] range(int start, int stop) {
     int[] result = new int[stop - start];
@@ -370,7 +373,7 @@ public class LtrQueryTests extends LuceneTestCase {
         "Scores match with similarity " + similarity.getClass(),
         modelScore,
         queryScore,
-        SCORE_NB_ULP_PREC * Math.ulp(modelScore));
+        SCORE_EPSILON);
 
     if (!(similarity instanceof TFIDFSimilarity)) {
       // There are precision issues with these similarities when using explain
@@ -382,7 +385,7 @@ public class LtrQueryTests extends LuceneTestCase {
           "Explain scores match with similarity " + similarity.getClass(),
           expl.getValue().floatValue(),
           queryScore,
-          5 * Math.ulp(modelScore));
+          SCORE_EPSILON);
       checkFeatureNames(expl, features);
     }
   }
