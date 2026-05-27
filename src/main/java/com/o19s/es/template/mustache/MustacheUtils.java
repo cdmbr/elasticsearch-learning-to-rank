@@ -20,14 +20,11 @@ import com.github.mustachejava.Mustache;
 import com.github.mustachejava.MustacheException;
 import java.io.StringReader;
 import java.io.StringWriter;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.Map;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ParameterizedMessage;
 import org.apache.logging.log4j.util.Supplier;
-import org.elasticsearch.SpecialPermission;
 
 public class MustacheUtils {
 
@@ -46,18 +43,10 @@ public class MustacheUtils {
     }
   }
 
-  @SuppressWarnings("removal")
   public static String execute(Mustache template, Map<String, Object> params) {
     final StringWriter writer = new StringWriter();
     try {
-      // crazy reflection here
-      SpecialPermission.check();
-      AccessController.doPrivileged(
-          (PrivilegedAction<Void>)
-              () -> {
-                template.execute(writer, params);
-                return null;
-              });
+      template.execute(writer, params);
     } catch (Exception e) {
       logger.error((Supplier<?>) () -> new ParameterizedMessage("Error running {}", template), e);
       throw new IllegalArgumentException("Error running " + template, e);

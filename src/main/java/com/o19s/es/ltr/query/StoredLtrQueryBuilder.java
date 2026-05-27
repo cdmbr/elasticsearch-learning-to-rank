@@ -31,13 +31,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import org.elasticsearch.TransportVersion;
-import org.elasticsearch.TransportVersions;
 import org.elasticsearch.common.ParsingException;
 import org.elasticsearch.common.io.stream.NamedWriteable;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.index.query.AbstractQueryBuilder;
 import org.elasticsearch.index.query.SearchExecutionContext;
+import org.elasticsearch.search.internal.MaxClauseCountQueryVisitor;
 import org.elasticsearch.xcontent.ObjectParser;
 import org.elasticsearch.xcontent.ParseField;
 import org.elasticsearch.xcontent.XContentBuilder;
@@ -163,7 +163,8 @@ public class StoredLtrQueryBuilder extends AbstractQueryBuilder<StoredLtrQueryBu
   }
 
   @Override
-  protected RankerQuery doToQuery(SearchExecutionContext context) throws IOException {
+  protected RankerQuery doToQuery(
+      SearchExecutionContext context, MaxClauseCountQueryVisitor visitor) throws IOException {
     String indexName =
         storeName != null
             ? IndexFeatureStore.indexName(storeName)
@@ -173,10 +174,11 @@ public class StoredLtrQueryBuilder extends AbstractQueryBuilder<StoredLtrQueryBu
         new LtrQueryContext(
             context,
             activeFeatures == null ? Collections.emptySet() : new HashSet<>(activeFeatures));
+    RankerQuery result;
     if (modelName != null) {
       CompiledLtrModel model = store.loadModel(modelName);
       validateActiveFeatures(model.featureSet(), ltrQueryContext);
-      return RankerQuery.build(model, ltrQueryContext, params, featureScoreCacheFlag);
+      result = RankerQuery.build(model, ltrQueryContext, params, featureScoreCacheFlag);
     } else {
       assert featureSetName != null;
       FeatureSet set = store.loadSet(featureSetName);
@@ -185,8 +187,12 @@ public class StoredLtrQueryBuilder extends AbstractQueryBuilder<StoredLtrQueryBu
       LinearRanker ranker = new LinearRanker(weights);
       CompiledLtrModel model = new CompiledLtrModel("linear", set, ranker);
       validateActiveFeatures(model.featureSet(), ltrQueryContext);
-      return RankerQuery.build(model, ltrQueryContext, params, featureScoreCacheFlag);
+      result = RankerQuery.build(model, ltrQueryContext, params, featureScoreCacheFlag);
     }
+    if (visitor != null && result != null) {
+      result.visit(visitor);
+    }
+    return result;
   }
 
   @Override
@@ -262,6 +268,6 @@ public class StoredLtrQueryBuilder extends AbstractQueryBuilder<StoredLtrQueryBu
 
   @Override
   public TransportVersion getMinimalSupportedVersion() {
-    return TransportVersions.V_7_0_0;
+    return TransportVersion.zero();
   }
 }

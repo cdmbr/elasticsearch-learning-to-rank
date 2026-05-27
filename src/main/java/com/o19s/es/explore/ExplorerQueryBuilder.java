@@ -19,7 +19,6 @@ import java.io.IOException;
 import java.util.Objects;
 import org.apache.lucene.search.Query;
 import org.elasticsearch.TransportVersion;
-import org.elasticsearch.TransportVersions;
 import org.elasticsearch.common.ParsingException;
 import org.elasticsearch.common.io.stream.NamedWriteable;
 import org.elasticsearch.common.io.stream.StreamInput;
@@ -29,6 +28,7 @@ import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryRewriteContext;
 import org.elasticsearch.index.query.Rewriteable;
 import org.elasticsearch.index.query.SearchExecutionContext;
+import org.elasticsearch.search.internal.MaxClauseCountQueryVisitor;
 import org.elasticsearch.xcontent.ObjectParser;
 import org.elasticsearch.xcontent.ParseField;
 import org.elasticsearch.xcontent.XContentBuilder;
@@ -99,8 +99,13 @@ public class ExplorerQueryBuilder extends AbstractQueryBuilder<ExplorerQueryBuil
   }
 
   @Override
-  protected Query doToQuery(SearchExecutionContext context) throws IOException {
-    return new ExplorerQuery(query.toQuery(context), type);
+  protected Query doToQuery(SearchExecutionContext context, MaxClauseCountQueryVisitor visitor)
+      throws IOException {
+    Query result = new ExplorerQuery(query.toQuery(context), type);
+    if (visitor != null && result != null) {
+      result.visit(visitor);
+    }
+    return result;
   }
 
   @Override
@@ -155,6 +160,6 @@ public class ExplorerQueryBuilder extends AbstractQueryBuilder<ExplorerQueryBuil
 
   @Override
   public TransportVersion getMinimalSupportedVersion() {
-    return TransportVersions.V_7_0_0;
+    return TransportVersion.zero();
   }
 }

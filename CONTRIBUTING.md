@@ -131,9 +131,62 @@ Docs changes at master will be automatically built and deployed to readthedocs.
 Most people come to this plugin, unfamiliar with the basic Learning to Rank workflow. We want this documentation to read as a walkthrough of the Learning to Rank workflow, without getting into the 'advanced' stuff yet. So save the caveats and wherefores to the later section (ie "Advanced Functionality") and keep the 80% 'what you need to know' to the chapters working to tell a story on how to do Learning to Rank.
 
 # Release Workflows
+
+> **Note for this fork (`cdmbr/elasticsearch-learning-to-rank`):** the workflow
+> below describes the **upstream** (`o19s`) automated flow. In this fork the
+> release is done **manually** — see [Cutting a release in this fork](#cutting-a-release-in-this-fork)
+> below. The `.github/workflows/release.yml` file is inherited from upstream but
+> is not used here, and the Maven Central publish step in that workflow is also
+> not in use (no secrets configured).
+
 To create a release for ESLTR push a tag with the format of `v0.0.0-es0.0.0`, for example: `v1.5.8-es8.5.0`.  When a tag matching this format is submitted a workflow will be triggered to create a Github release.
 
 To publish releases on Maven Central you must follow the instructions [here](https://central.sonatype.org/publish/publish-guide/).  Once you have a user registered, you can Close/Release repositories generated from the Github workflows.
+
+## Cutting a release in this fork
+
+Releases on `cdmbr/elasticsearch-learning-to-rank` are created by hand with the
+`gh` CLI. Past releases (see [Releases](https://github.com/cdmbr/elasticsearch-learning-to-rank/releases))
+all follow this convention:
+
+- **Tag**: `v<ltrVersion>-es<elasticsearchVersion>` — e.g. `v1.5.12-es9.4.1`.
+  `ltrVersion` and `elasticsearchVersion` come from `gradle.properties`.
+- **Asset**: a single zip renamed to `ltr-plugin-<tag>.zip` (Gradle produces
+  `ltr-<ltrVersion>-es<elasticsearchVersion>.zip`; you rename it to add the
+  `ltr-plugin-` prefix and the leading `v`).
+- **Release title**: the tag name itself.
+- **Release body**: empty.
+
+Steps, from a clean tree at the head of the release branch:
+
+```bash
+# 1. Sanity-check the versions you're about to tag
+grep -E 'ltrVersion|elasticsearchVersion' gradle.properties
+
+# 2. Full build + tests + spotless. This is the gate.
+./gradlew clean check
+
+# 3. Push the release branch so the tagged commit is visible on origin
+git push -u origin <branch>
+
+# 4. Tag the head and push the tag
+git tag -a v<ltrVersion>-es<esVersion> \
+  -m "Release v<ltrVersion> for Elasticsearch <esVersion>"
+git push origin v<ltrVersion>-es<esVersion>
+
+# 5. Rename the built zip to match the asset naming convention
+cp build/distributions/ltr-<ltrVersion>-es<esVersion>.zip \
+   /tmp/ltr-plugin-v<ltrVersion>-es<esVersion>.zip
+
+# 6. Create the GitHub release, attaching the renamed zip
+gh release create v<ltrVersion>-es<esVersion> \
+  /tmp/ltr-plugin-v<ltrVersion>-es<esVersion>.zip \
+  --title v<ltrVersion>-es<esVersion> \
+  --notes ""
+```
+
+After step 6, verify the release page shows the asset under the expected name
+and the `Latest` badge moved to the new tag.
 
 # Other questions? Get in touch!
 

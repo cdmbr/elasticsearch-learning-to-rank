@@ -15,7 +15,6 @@ import org.apache.lucene.analysis.tokenattributes.TermToBytesRefAttribute;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.search.Query;
 import org.elasticsearch.TransportVersion;
-import org.elasticsearch.TransportVersions;
 import org.elasticsearch.common.ParsingException;
 import org.elasticsearch.common.io.stream.NamedWriteable;
 import org.elasticsearch.common.io.stream.StreamInput;
@@ -23,6 +22,7 @@ import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.index.mapper.MappedFieldType;
 import org.elasticsearch.index.query.AbstractQueryBuilder;
 import org.elasticsearch.index.query.SearchExecutionContext;
+import org.elasticsearch.search.internal.MaxClauseCountQueryVisitor;
 import org.elasticsearch.xcontent.ObjectParser;
 import org.elasticsearch.xcontent.ParseField;
 import org.elasticsearch.xcontent.XContentBuilder;
@@ -134,7 +134,16 @@ public class TermStatQueryBuilder extends AbstractQueryBuilder<TermStatQueryBuil
   }
 
   @Override
-  protected Query doToQuery(SearchExecutionContext context) throws IOException {
+  protected Query doToQuery(SearchExecutionContext context, MaxClauseCountQueryVisitor visitor)
+      throws IOException {
+    Query query = buildQuery(context);
+    if (visitor != null && query != null) {
+      query.visit(visitor);
+    }
+    return query;
+  }
+
+  private Query buildQuery(SearchExecutionContext context) throws IOException {
     var compiledExpression = Scripting.compile(expr);
     AggrType aggrType = AggrType.valueOf(aggr.toUpperCase(Locale.getDefault()));
     AggrType posAggrType = AggrType.valueOf(pos_aggr.toUpperCase(Locale.getDefault()));
@@ -266,6 +275,6 @@ public class TermStatQueryBuilder extends AbstractQueryBuilder<TermStatQueryBuil
 
   @Override
   public TransportVersion getMinimalSupportedVersion() {
-    return TransportVersions.V_7_0_0;
+    return TransportVersion.zero();
   }
 }

@@ -30,7 +30,6 @@ import java.util.List;
 import java.util.Objects;
 import org.apache.lucene.search.Query;
 import org.elasticsearch.TransportVersion;
-import org.elasticsearch.TransportVersions;
 import org.elasticsearch.common.ParsingException;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
@@ -41,6 +40,7 @@ import org.elasticsearch.index.query.QueryRewriteContext;
 import org.elasticsearch.index.query.Rewriteable;
 import org.elasticsearch.index.query.SearchExecutionContext;
 import org.elasticsearch.script.Script;
+import org.elasticsearch.search.internal.MaxClauseCountQueryVisitor;
 import org.elasticsearch.xcontent.ObjectParser;
 import org.elasticsearch.xcontent.ParseField;
 import org.elasticsearch.xcontent.XContentBuilder;
@@ -124,7 +124,8 @@ public class LtrQueryBuilder extends AbstractQueryBuilder<LtrQueryBuilder> {
   }
 
   @Override
-  protected Query doToQuery(SearchExecutionContext context) throws IOException {
+  protected Query doToQuery(SearchExecutionContext context, MaxClauseCountQueryVisitor visitor)
+      throws IOException {
     List<PrebuiltFeature> features = new ArrayList<>(_features.size());
     for (QueryBuilder builder : _features) {
       features.add(new PrebuiltFeature(builder.queryName(), builder.toQuery(context)));
@@ -138,7 +139,11 @@ public class LtrQueryBuilder extends AbstractQueryBuilder<LtrQueryBuilder> {
 
     PrebuiltFeatureSet featureSet = new PrebuiltFeatureSet(queryName(), features);
     PrebuiltLtrModel model = new PrebuiltLtrModel(ranker.name(), ranker, featureSet);
-    return RankerQuery.build(model);
+    Query result = RankerQuery.build(model);
+    if (visitor != null && result != null) {
+      result.visit(visitor);
+    }
+    return result;
   }
 
   @Override
@@ -206,6 +211,6 @@ public class LtrQueryBuilder extends AbstractQueryBuilder<LtrQueryBuilder> {
 
   @Override
   public TransportVersion getMinimalSupportedVersion() {
-    return TransportVersions.V_7_0_0;
+    return TransportVersion.zero();
   }
 }

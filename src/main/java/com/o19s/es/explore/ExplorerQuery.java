@@ -285,6 +285,8 @@ public class ExplorerQuery extends Query {
 
   @Override
   public void visit(QueryVisitor visitor) {
-    this.query.visit(visitor.getSubVisitor(BooleanClause.Occur.MUST, this));
+    if (this.query != null) {
+      this.query.visit(visitor.getSubVisitor(BooleanClause.Occur.MUST, this));
+    }
   }
 }

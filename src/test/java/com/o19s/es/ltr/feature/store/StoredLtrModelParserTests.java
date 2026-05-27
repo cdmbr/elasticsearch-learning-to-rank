@@ -31,7 +31,7 @@ import java.io.IOException;
 import java.util.Base64;
 import org.apache.lucene.tests.util.LuceneTestCase;
 import org.apache.lucene.util.BytesRef;
-import org.elasticsearch.TransportVersions;
+import org.elasticsearch.TransportVersion;
 import org.elasticsearch.common.ParsingException;
 import org.elasticsearch.common.Randomness;
 import org.elasticsearch.common.Strings;
@@ -332,7 +332,7 @@ public class StoredLtrModelParserTests extends LuceneTestCase {
     String base64Encoded = "C21vZGVsL2R1bW15EmNvbXBsZXRlbHkgaWdub3JlZAE=";
     byte[] bytes = Base64.getDecoder().decode(base64Encoded);
     StreamInput input = ByteBufferStreamInput.wrap(bytes, 0, bytes.length);
-    input.setTransportVersion(TransportVersions.V_7_10_0);
+    input.setTransportVersion(TransportVersion.zero());
 
     StoredLtrModel.LtrModelDefinition modelUnserialized =
         new StoredLtrModel.LtrModelDefinition(input);
